@@ -6,17 +6,6 @@ const { Server } = require("socket.io");
 app.use(cors());
 
 const mongoose = require('mongoose');
-
-const fileupload = require('express-fileupload');
-const cloudinary = require('cloudinary').v2;
-
-cloudinary.config({ 
-  cloud_name: 'de6yfotqd', 
-  api_key: '764193511939459', 
-  api_secret: 'vzMKyAoCC38HANUekZJxDNOPrbk  ',
-  secure: true
-});
-
 mongoose.connect("mongodb://127.0.0.1:27017", {
   dbName: "GhostTalk",
 })
@@ -28,14 +17,10 @@ const chatSchema = new mongoose.Schema({
   author: String,
   time: String,
   message: String,
-  image: String,
+  
 });
 
 const chat = mongoose.model("chat", chatSchema);
-
-app.use(fileupload({
-  useTempFiles:true
-}))
 
 app.get("/chat/:room", async (req, res) => {
   try {
@@ -48,7 +33,6 @@ app.get("/chat/:room", async (req, res) => {
   }
 });
 
-
 const server = http.createServer(app);
 
 const io = new Server(server, {
@@ -58,19 +42,6 @@ const io = new Server(server, {
   },
 });
 
-
-app.post('/upload', (req, res) => {
-  const file = req.files.photos; // Access the uploaded file using the name "photos"
-
-  cloudinary.uploader.upload(file.tempFilePath, (err, result) => {
-    if (err) {
-      console.error('Error uploading image to Cloudinary:', err);
-      // Handle error response
-      return res.status(500).json({ error: 'Error uploading image' });
-    }
-
-    const imageUrl = result.secure_url;
-
     // Save the image URL in your database
     // Create a new chat message with the image URL
     const messageData = {
@@ -78,11 +49,8 @@ app.post('/upload', (req, res) => {
       author: data.author,
       time: data.time,
       message: data.message,
-      imageUrl: imageUrl
-    };
-
+};
     chat.create(messageData);
-
     // Emit the message data with the image URL to all connected clients
     io.to(data.room).emit('receive_message', messageData);
 
